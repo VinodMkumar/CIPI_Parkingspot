@@ -45,14 +45,14 @@ namespace ParkingspotProject.Controllers
             }
             return availableSlot;
         }
-        private bool CheckVehicleAlreadyParked(string tagNumber)
+        private bool CheckVehicleParkedOrLeft(string tagNumber)
         {
             bool isParked = false;
             string connecString = this._configuration.GetConnectionString("ParkingDatabase");
 
             using (SqlConnection con = new SqlConnection(connecString))
             {
-                using (SqlCommand cmd = new SqlCommand("[ParkingSpot].[dbo].[CheckIsCarParked]", con))
+                using (SqlCommand cmd = new SqlCommand("[ParkingSpot].[dbo].[CheckVehicleParkedOrLeft]", con))
                 {
                     con.Open();
                     cmd.CommandType = CommandType.StoredProcedure;
@@ -60,6 +60,28 @@ namespace ParkingspotProject.Controllers
                     SqlDataReader sdr = cmd.ExecuteReader();
                     sdr.Read();
                     int retuVal = int.Parse(sdr["IsParked"].ToString());
+                    if (retuVal > 0) { isParked = true; } else { isParked = false; }
+                }
+                con.Close();
+
+            }
+            return isParked;
+        }
+        private bool CheckValidCarParked(string tagNumber)
+        {
+            bool isParked = false;
+            string connecString = this._configuration.GetConnectionString("ParkingDatabase");
+
+            using (SqlConnection con = new SqlConnection(connecString))
+            {
+                using (SqlCommand cmd = new SqlCommand("[ParkingSpot].[dbo].[CheckValidCarParked]", con))
+                {
+                    con.Open();
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Parameters.AddWithValue("@tagnumber", tagNumber);
+                    SqlDataReader sdr = cmd.ExecuteReader();
+                    sdr.Read();
+                    int retuVal = int.Parse(sdr["IsCarExist"].ToString());
                     if (retuVal > 0) { isParked = true; } else { isParked = false; }
                 }
                 con.Close();
@@ -111,7 +133,7 @@ namespace ParkingspotProject.Controllers
             int i = 0;
             string connecString = this._configuration.GetConnectionString("ParkingDatabase");
             int availableSlot = GetAvaialbleParkingSpot();
-            bool isParked = CheckVehicleAlreadyParked(tagNumber);
+            bool isParked = CheckVehicleParkedOrLeft(tagNumber);
             if (availableSlot > 0)
             {
                 if (!isParked)
@@ -131,11 +153,11 @@ namespace ParkingspotProject.Controllers
                 }
                 else
                 {
-                    return Ok("Car already Parked in");
+                    return BadRequest("Car already Parked in");
                 }
             }
             else
-                return Ok("Slots are not available");
+                return BadRequest("Slots are not available");
             if (i >= 1)
                 return Ok(true);
             else
@@ -146,26 +168,28 @@ namespace ParkingspotProject.Controllers
         {
             int i = 0;
             string connecString = this._configuration.GetConnectionString("ParkingDatabase");
-            bool isParked = CheckVehicleAlreadyParked(tagNumber);
-            if (isParked)
+            bool isValid = CheckValidCarParked(tagNumber);
+            if (isValid)
             {
-                using (SqlConnection con = new SqlConnection(connecString))
+                bool isParked = CheckVehicleParkedOrLeft(tagNumber);
+                if (isParked)
                 {
-                    int defaultFeeperHour = int.Parse(_ParkingfeeData.defaultFeeperHour);
-                    SqlCommand cmd = new SqlCommand("[ParkingSpot].[dbo].[OutParkingspot]", con);
-                    cmd.CommandType = System.Data.CommandType.StoredProcedure;
-                    cmd.Parameters.AddWithValue("@tagnumber", tagNumber);
-                    con.Open();
-                    cmd.ExecuteNonQuery();
-                    con.Close();
+                    using (SqlConnection con = new SqlConnection(connecString))
+                    {
+                        int defaultFeeperHour = int.Parse(_ParkingfeeData.defaultFeeperHour);
+                        SqlCommand cmd = new SqlCommand("[ParkingSpot].[dbo].[OutParkingspot]", con);
+                        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+                        cmd.Parameters.AddWithValue("@tagnumber", tagNumber);
+                        con.Open();
+                        i = cmd.ExecuteNonQuery();
+                        con.Close();
+                    }
+                    return Ok(true);
                 }
+                else
+                    return StatusCode(StatusCodes.Status200OK, "Car already left parking lot ");
             }
-            else
-                return Ok("Car already left parking lot");
-            if (i >= 1)
-                return Ok(true);
-            else
-                return Ok(false);
+            return StatusCode(StatusCodes.Status200OK, "Car TagNumber not Valid ");
         }
         [HttpGet("GetModelStats")]
         public IActionResult GetModelStats()
