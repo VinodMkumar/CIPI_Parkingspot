@@ -96,6 +96,7 @@ namespace ParkingspotProject.Controllers
             List<Parkingspot> parkingspots = new List<Parkingspot>();
             string connecString = this._configuration.GetConnectionString("ParkingDatabase");
             int totalSpots = int.Parse(_ParkingfeeData.totalSpotsAvailable);
+            int feeperHr = int.Parse(_ParkingfeeData.defaultFeeperHour);
             int availableSlot = 0;
             using (SqlConnection con = new SqlConnection(connecString))
             {
@@ -110,7 +111,7 @@ namespace ParkingspotProject.Controllers
                             parkingspots.Add(new Parkingspot
                             {
                                 TagNumber = sdr["TagNumber"].ToString(),
-                                InTime = DateTime.Parse(sdr["InTime"].ToString()),
+                                InTime = DateTime.Parse(sdr["InTime"].ToString()).ToLongTimeString(),
                                 ElapsedTime = int.Parse(sdr["ElapsedTime"].ToString()),
                                 Fee = int.Parse(sdr["Fee"].ToString()),
                             });
@@ -123,7 +124,7 @@ namespace ParkingspotProject.Controllers
 
             }
 
-            GetSpots getSpots = new GetSpots(availableSlot, parkingspots.Count, parkingspots);
+            GetSpots getSpots = new GetSpots(totalSpots, feeperHr, availableSlot, parkingspots.Count, parkingspots);
             return Ok(getSpots);
         }
         [HttpPost("InParkingSpot")]
@@ -132,6 +133,7 @@ namespace ParkingspotProject.Controllers
 
             int i = 0;
             string connecString = this._configuration.GetConnectionString("ParkingDatabase");
+            int defaultFeeperHour = int.Parse(_ParkingfeeData.defaultFeeperHour);
             int availableSlot = GetAvaialbleParkingSpot();
             bool isParked = CheckVehicleParkedOrLeft(tagNumber);
             if (availableSlot > 0)
@@ -144,6 +146,7 @@ namespace ParkingspotProject.Controllers
                         {
                             cmd.CommandType = System.Data.CommandType.StoredProcedure;
                             cmd.Parameters.AddWithValue("@tagnumber", tagNumber);
+                            cmd.Parameters.AddWithValue("@defaultfeeperHr", defaultFeeperHour);
                             con.Open();
                             i = cmd.ExecuteNonQuery();
                         }
@@ -180,6 +183,7 @@ namespace ParkingspotProject.Controllers
                         SqlCommand cmd = new SqlCommand("[ParkingSpot].[dbo].[OutParkingspot]", con);
                         cmd.CommandType = System.Data.CommandType.StoredProcedure;
                         cmd.Parameters.AddWithValue("@tagnumber", tagNumber);
+                        cmd.Parameters.AddWithValue("@defaultfeeperHr", defaultFeeperHour);
                         con.Open();
                         i = cmd.ExecuteNonQuery();
                         con.Close();
@@ -197,10 +201,12 @@ namespace ParkingspotProject.Controllers
             ParkingModalStats parkingModalStats = new ParkingModalStats();
             int i = 0;
             string connecString = this._configuration.GetConnectionString("ParkingDatabase");
-            SqlConnection con = new SqlConnection(connecString);
+            int defaultFeeperHour = int.Parse(_ParkingfeeData.defaultFeeperHour);
 
+            SqlConnection con = new SqlConnection(connecString);
             SqlCommand cmd = new SqlCommand("[ParkingSpot].[dbo].[CalculatePakingstats]", con);
             cmd.CommandType = System.Data.CommandType.StoredProcedure;
+            cmd.Parameters.AddWithValue("@defaultfeeperHr", defaultFeeperHour);
             con.Open();
             using (SqlDataReader sdr = cmd.ExecuteReader())
             {

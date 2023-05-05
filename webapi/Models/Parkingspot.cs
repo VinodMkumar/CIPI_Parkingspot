@@ -4,7 +4,7 @@
     {
 //        public int Id { get; set; }
         public string TagNumber { get; set; }
-        public DateTime InTime { get; set; }
+        public string InTime { get; set; }
         //public DateTime OutTime { get; set; }
         public long Fee { get; set; }
         public int ElapsedTime { get; set; }
@@ -26,13 +26,17 @@
     }
     public class GetSpots
     {     
-        public GetSpots(int availablespots, int TakenspotsCount, List<Parkingspot> parkingspots)
+        public GetSpots(int totalspots, int feeperHr, int availablespots, int TakenspotsCount, List<Parkingspot> parkingspots)
         {
+            this.totalspots = totalspots;
+            this.feeperHr = feeperHr;
             this.availablespotsCount = availablespots;
             this.TakenspotsCount = TakenspotsCount;
             this.parkingspotslist = parkingspots;
         }
 
+        public int totalspots { get; set; }
+        public int feeperHr { get; set; }
         public int availablespotsCount { get; set; }
         public int TakenspotsCount { get; set; }
         public List<Parkingspot> parkingspotslist { get; set; }
