@@ -1,3 +1,7 @@
+Create Database ParkingSpot;
+
+USE ParkingSpot;
+
 CREATE TABLE Parking
 (
 ID int NOT NULL IDENTITY(1,1) PRIMARY KEY ,
@@ -87,7 +91,10 @@ DECLARE @AVGRevenuePerDay int
 DECLARE @subquerycount int
 begin  
 	SET @Availablespots = 15 - (SELECT COUNT(*) from Parking where IsParked = 1)              
-	SET @todayRevenue = (SELECT Sum(Fee) FROM Parking where  cast(InTime as date) = cast(GETDATE() as date))
+	SET @todayRevenue = (SELECT Case 
+								WHEN (SELECT count(Fee) FROM Parking where  cast(InTime as date) = cast(GETDATE() as date)) > 0 Then (SELECT Sum(Fee) FROM Parking where  cast(InTime as date) = cast(GETDATE() as date))
+								ELSE 0
+								END as todayRevenue)
 	SET @AVGRevenuePerDay = (SELECT AVG(Fee) FROM Parking where DATEDIFF(DAY,InTime,GETDATE()) <30 )
 	--SET @subquerycount = (SELECT COUNT(*) AS num_cars, cast(InTime as date) AS park_date FROM Parking  GROUP BY InTime)
 	SET @AvgCarsPerDay = (SELECT AVG(num_cars) FROM (SELECT COUNT(TagNumber) AS num_cars FROM Parking  GROUP BY cast(InTime as date)) as dailyCars)
