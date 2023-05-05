@@ -8,7 +8,7 @@ ElapsedTime int,
  Fee int,
  IsParked bit NOT NULL default 0
 );
-
+--------------------------------------------------------------------------------------------------
 Create procedure [dbo].[Getvailableslots] 
 as  
 DECLARE @Availablespotsqry varchar(100)
@@ -17,6 +17,7 @@ begin
     EXEC(@Availablespotsqry)
 End
 Exec [ParkingSpot].[dbo].[Getvailableslots]
+--------------------------------------------------------------------------------------------------
 
 CREATE procedure [dbo].[CheckIsCarParked] (@tagnumber Varchar(50))
 as  
@@ -27,6 +28,7 @@ begin
 End
 
 --Exec [ParkingSpot].[dbo].[CheckIsCarParked] 'okddf556'
+--------------------------------------------------------------------------------------------------
 
 CREATE procedure [dbo].[GetTakenParkingspots]
 as  
@@ -36,6 +38,7 @@ begin
 End
 
 --exec [ParkingSpot].[dbo].[GetTakenParkingspots]
+--------------------------------------------------------------------------------------------------
 
 CREATE procedure [dbo].[InParkingspot](@tagnumber Varchar(50))
 as  
@@ -45,6 +48,7 @@ begin
 End
 
 --exec [ParkingSpot].[dbo].[InParkingspot] 'Vino242'
+--------------------------------------------------------------------------------------------------
 
 Create procedure [dbo].[OutParkingspot](@tagnumber Varchar(50))
 as  
@@ -63,16 +67,18 @@ begin
    where TagNumber = @tagnumber
 End
 
---exec [ParkingSpot].[dbo].[OutParkingspot] 'TDG356Y'
+--exec [ParkingSpot].[dbo].[OutParkingspot] 'okdf556'
+--------------------------------------------------------------------------------------------------
 
-CREATE procedure [dbo].[CheckIsCarParked] (@tagnumber Varchar(50))
+CREATE procedure [dbo].[CheckVehicleParkedOrLeft] (@tagnumber Varchar(50))
 as  
 
 begin  
   SELECT count(*) as IsParked FROM Parking where IsParked = 1 and TagNumber =@tagnumber;
    
 End
-ALTER procedure [dbo].[CalculatePakingstats] 
+--------------------------------------------------------------------------------------------------
+Create procedure [dbo].[CalculatePakingstats] 
 as  
 DECLARE @todayRevenue int
 DECLARE @Availablespots int
@@ -90,4 +96,14 @@ select @Availablespots as Availablespots, @todayRevenue as todayRevenue,@AvgCars
 End
 
 --EXEC [dbo].[CalculatePakingstats]
+--------------------------------------------------------------------------------------------------
 
+CREATE procedure [dbo].[CheckValidCarParked] (@tagnumber Varchar(50))
+as  
+
+begin  
+  SELECT count(*) as IsCarExist FROM Parking where TagNumber =@tagnumber;
+   
+End
+
+--------------------------------------------------------------------------------------------------
