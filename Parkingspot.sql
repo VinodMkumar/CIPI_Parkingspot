@@ -44,17 +44,18 @@ End
 --exec [ParkingSpot].[dbo].[GetTakenParkingspots]
 --------------------------------------------------------------------------------------------------
 
-CREATE procedure [dbo].[InParkingspot](@tagnumber Varchar(50))
+CREATE procedure [dbo].[InParkingspot](@tagnumber Varchar(50),@defaultfeeperHr int )
 as  
 begin  
-  insert into Parking(TagNumber, InTime,OutTime, ElapsedTime,Fee,IsParked) Values (@tagnumber,GetDate(),GetDate(),1,15,1);
+-- min elapsed time taking 1 as default & While parking making IsParked flag as 1
+  insert into Parking(TagNumber, InTime,OutTime, ElapsedTime,Fee,IsParked) Values (@tagnumber,GetDate(),GetDate(),1,@defaultfeeperHr,1);
    
 End
 
 --exec [ParkingSpot].[dbo].[InParkingspot] 'Vino242'
 --------------------------------------------------------------------------------------------------
 
-Create procedure [dbo].[OutParkingspot](@tagnumber Varchar(50))
+Create procedure [dbo].[OutParkingspot](@tagnumber Varchar(50),@defaultfeeperHr int)
 as  
 DECLARE @fee int
 begin  
@@ -65,8 +66,8 @@ begin
  
    Update Parking 
    SET Fee = ( Select CASE 
-			WHEN ElapsedTime = 0 THEN 15
-			WHEN ElapsedTime != 0 THEN (ElapsedTime * 15) END as Fee 
+			WHEN ElapsedTime = 0 THEN @defaultfeeperHr
+			WHEN ElapsedTime != 0 THEN (ElapsedTime * @defaultfeeperHr) END as Fee 
   from Parking where TagNumber = @tagnumber)
    where TagNumber = @tagnumber
 End
@@ -82,7 +83,7 @@ begin
    
 End
 --------------------------------------------------------------------------------------------------
-Create procedure [dbo].[CalculatePakingstats] 
+Create procedure [dbo].[CalculatePakingstats] (@defaultfeeperHr int)
 as  
 DECLARE @todayRevenue int
 DECLARE @Availablespots int
@@ -90,7 +91,7 @@ DECLARE @AvgCarsPerDay int
 DECLARE @AVGRevenuePerDay int
 DECLARE @subquerycount int
 begin  
-	SET @Availablespots = 15 - (SELECT COUNT(*) from Parking where IsParked = 1)              
+	SET @Availablespots = @defaultfeeperHr - (SELECT COUNT(*) from Parking where IsParked = 1)              
 	SET @todayRevenue = (SELECT Case 
 								WHEN (SELECT count(Fee) FROM Parking where  cast(InTime as date) = cast(GETDATE() as date)) > 0 Then (SELECT Sum(Fee) FROM Parking where  cast(InTime as date) = cast(GETDATE() as date))
 								ELSE 0
